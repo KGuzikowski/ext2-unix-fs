@@ -337,53 +337,54 @@ long ext2_blkaddr_read(uint32_t ino, uint32_t blkidx) {
  * WARNING: This function assumes that `ino` i-node pointer is valid! */
 int ext2_read(uint32_t ino, void *data, size_t pos, size_t len) {
   /* TODO */
-  uint32_t block_id = pos / BLKSIZE;
-  uint32_t first_block_offset_from_start = pos % BLKSIZE;
-  uint32_t first_block_offset_from_end =
-    BLKSIZE - first_block_offset_from_start;
-  uint32_t last_block_req_size = (pos + len) % BLKSIZE;
+
+  size_t end = pos + len;
+  uint32_t block_idx = pos / BLKSIZE;
+  size_t fb_offset_before_start = pos % BLKSIZE;
+  size_t fb_offset_after_start = BLKSIZE - fb_offset_before_start;
+  size_t lb_offset_before_end = end % BLKSIZE;
+  size_t first_whole_block_pos = pos + fb_offset_after_start;
+  size_t last_whole_block_end = end - lb_offset_before_end;
+  uint32_t whole_blocks_to_read =
+    (int)(last_whole_block_end - first_whole_block_pos) < 0
+      ? 0
+      : (last_whole_block_end - first_whole_block_pos) / BLKSIZE;
 
   if (ino != 0) {
     ext2_inode_t inode;
     ext2_inode_read(ino, &inode);
-    if (inode.i_size < pos + len)
+    if (inode.i_size < end)
       return EINVAL;
   }
+  blk_t *blk = blk_get(ino, block_idx);
 
-  /* Special case. */
-  blk_t *blk = blk_get(ino, block_id);
   if (blk == BLK_ZERO) {
     memset(data, 0, len);
     return EXIT_SUCCESS;
   }
 
-  uint32_t first_entire_block_pos_end = pos + first_block_offset_from_end;
-  uint32_t last_entire_block_pos_end = (pos + len) - last_block_req_size;
-  uint32_t entire_blocks_to_read;
-  if ((int)(last_entire_block_pos_end - first_entire_block_pos_end) < 0) {
-    entire_blocks_to_read = 0;
-  } else {
-    entire_blocks_to_read =
-      (last_entire_block_pos_end - first_entire_block_pos_end) / BLKSIZE;
+  if (end <= first_whole_block_pos) {
+    memcpy(data, blk->b_data + fb_offset_before_start, len);
+    blk_put(blk);
+    return EXIT_SUCCESS;
   }
 
-  /* Read the first block. */
-  memcpy(data, blk->b_data + first_block_offset_from_start,
-         first_block_offset_from_end);
+  // read first block
+  memcpy(data, blk->b_data + fb_offset_before_start, fb_offset_after_start);
   blk_put(blk);
-  /* Read blocks from 2 to blocks_to_read. */
-  for (uint32_t i = 0; i < entire_blocks_to_read; i++) {
-    blk = blk_get(ino, block_id + i);
-    memcpy(data + i * BLKSIZE + first_block_offset_from_end, blk->b_data,
-           BLKSIZE);
+  block_idx++;
+  // read whole blocks (whole means block size == BLKSIZE)
+  for (uint32_t i = 0; i < whole_blocks_to_read; i++) {
+    blk = blk_get(ino, block_idx);
+    memcpy(data + fb_offset_after_start + i * BLKSIZE, blk->b_data, BLKSIZE);
     blk_put(blk);
+    block_idx++;
   }
-  if (last_block_req_size) {
-    /* Read the last block. */
-    blk = blk_get(ino, block_id + entire_blocks_to_read);
-    void *last_data_block_ptr =
-      data + entire_blocks_to_read * BLKSIZE + first_block_offset_from_end;
-    memcpy(last_data_block_ptr, blk->b_data, last_block_req_size);
+  // read last block
+  if (lb_offset_before_end != 0) {
+    blk = blk_get(ino, block_idx);
+    memcpy(data + whole_blocks_to_read * BLKSIZE + fb_offset_after_start,
+           blk->b_data, lb_offset_before_end);
     blk_put(blk);
   }
 
