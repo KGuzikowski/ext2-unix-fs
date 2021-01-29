@@ -1,0 +1,14 @@
+name: GitHub Classroom Workflow
+
+on: [push]
+
+jobs:
+  build:
+    name: Autograding
+    runs-on: ubuntu-latest
+    container: cahirwpz/ii-so:latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run clang-format
+        run: ./run-clang-format.sh
+      - uses: education/autograding@v1

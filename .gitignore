@@ -1,0 +1,13 @@
+# Compiled languages
+*.o
+*.so
+*.a
+.*.d
+ext2fuse
+ext2test
+ext2list
+listfs
+
+# Vim
+*.swp
+*~
