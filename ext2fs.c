@@ -363,10 +363,10 @@ int ext2_read(uint32_t ino, void *data, size_t pos, size_t len) {
     BLKSIZE;
 
   // if (first_block_offset_from_end) {
-    /* Read the first block. */
-    memcpy(data, blk->b_data + first_block_offset_from_start,
-           first_block_offset_from_end);
-    blk_put(blk);
+  /* Read the first block. */
+  memcpy(data, blk->b_data + first_block_offset_from_start,
+         first_block_offset_from_end);
+  blk_put(blk);
   // }
   /* Read blocks from 2 to blocks_to_read. */
   for (uint32_t i = 0; i < entire_blocks_to_read; i++) {
