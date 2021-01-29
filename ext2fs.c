@@ -350,7 +350,7 @@ int ext2_read(uint32_t ino, void *data, size_t pos, size_t len) {
       return EINVAL;
   }
 
-  /* Special cases. */
+  /* Special case. */
   blk_t *blk = blk_get(ino, block_id);
   if (blk == BLK_ZERO) {
     memset(data, 0, len);
@@ -358,16 +358,19 @@ int ext2_read(uint32_t ino, void *data, size_t pos, size_t len) {
   }
 
   uint32_t first_entire_block_pos_end = pos + first_block_offset_from_end;
-  uint32_t entire_blocks_to_read =
-    (((pos + len) - last_block_req_size) - first_entire_block_pos_end) /
-    BLKSIZE;
+  uint32_t last_entire_block_pos_end = (pos + len) - last_block_req_size;
+  uint32_t entire_blocks_to_read;
+  if ((int)(last_entire_block_pos_end - first_entire_block_pos_end) < 0) {
+    entire_blocks_to_read = 0;
+  } else {
+    entire_blocks_to_read =
+      (last_entire_block_pos_end - first_entire_block_pos_end) / BLKSIZE;
+  }
 
-  // if (first_block_offset_from_end) {
   /* Read the first block. */
   memcpy(data, blk->b_data + first_block_offset_from_start,
          first_block_offset_from_end);
   blk_put(blk);
-  // }
   /* Read blocks from 2 to blocks_to_read. */
   for (uint32_t i = 0; i < entire_blocks_to_read; i++) {
     blk = blk_get(ino, block_id + i);
