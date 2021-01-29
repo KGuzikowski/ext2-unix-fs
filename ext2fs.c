@@ -357,14 +357,8 @@ int ext2_read(uint32_t ino, void *data, size_t pos, size_t len) {
 
   /* Special cases. */
   blk_t *blk = blk_get(ino, block_id);
-  uint32_t first_entire_blk_pos = pos + first_block_offset_from_end;
   if (blk == BLK_ZERO) {
     memset(data, 0, len);
-    return EXIT_SUCCESS;
-  }
-  if (pos + len <= first_entire_blk_pos) {
-    memcpy(data, blk->b_data + first_block_offset_from_start, len);
-    blk_put(blk);
     return EXIT_SUCCESS;
   }
 
