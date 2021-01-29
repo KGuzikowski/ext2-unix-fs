@@ -152,7 +152,7 @@ static blk_t *blk_get(uint32_t ino, uint32_t idx) {
   /* TODO */
   blk = TAILQ_FIRST(bucket);
   while (blk) {
-    if (blk->b_inode == ino) {
+    if (blk->b_inode == ino && blk->b_inode == idx) {
       if (blk->b_refcnt < 1) {
         TAILQ_REMOVE(&lrulst, blk, b_link);
       }
@@ -347,8 +347,8 @@ int ext2_read(uint32_t ino, void *data, size_t pos, size_t len) {
   blk_t *blk = NULL;
   while (len > 0) {
     uint32_t offset_in_block = pos % BLKSIZE;
-    uint32_t curr_blk_id = pos / BLKSIZE;
     uint32_t rest_of_bytes_in_block = BLKSIZE - offset_in_block;
+    uint32_t curr_blk_id = pos / BLKSIZE;
     uint32_t processed =
       rest_of_bytes_in_block >= len ? len : rest_of_bytes_in_block;
 
