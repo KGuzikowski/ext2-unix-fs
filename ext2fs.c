@@ -342,11 +342,6 @@ int ext2_read(uint32_t ino, void *data, size_t pos, size_t len) {
   uint32_t first_block_offset_from_end =
     BLKSIZE - first_block_offset_from_start;
   uint32_t last_block_req_size = (pos + len) % BLKSIZE;
-  uint32_t entire_blocks_to_read = len / BLKSIZE;
-
-  if (first_block_offset_from_end + last_block_req_size == BLKSIZE) {
-    entire_blocks_to_read--;
-  }
 
   if (ino != 0) {
     ext2_inode_t inode;
@@ -361,6 +356,9 @@ int ext2_read(uint32_t ino, void *data, size_t pos, size_t len) {
     memset(data, 0, len);
     return EXIT_SUCCESS;
   }
+
+  uint32_t first_entire_block_pos_end = pos + first_block_offset_from_end;
+  uint32_t entire_blocks_to_read = (((pos + len) - last_block_req_size) - first_entire_block_pos_end) / BLKSIZE;
 
   if (first_block_offset_from_end) {
     /* Read the first block. */
