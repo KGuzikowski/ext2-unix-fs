@@ -358,7 +358,9 @@ int ext2_read(uint32_t ino, void *data, size_t pos, size_t len) {
   }
 
   uint32_t first_entire_block_pos_end = pos + first_block_offset_from_end;
-  uint32_t entire_blocks_to_read = (((pos + len) - last_block_req_size) - first_entire_block_pos_end) / BLKSIZE;
+  uint32_t entire_blocks_to_read =
+    (((pos + len) - last_block_req_size) - first_entire_block_pos_end) /
+    BLKSIZE;
 
   if (first_block_offset_from_end) {
     /* Read the first block. */
