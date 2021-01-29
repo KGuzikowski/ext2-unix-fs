@@ -210,8 +210,12 @@ int ext2_block_used(uint32_t blkaddr) {
   uint32_t block_group_id = (blkaddr - 1) / blocks_per_group;
   blk_t *block_bitmap = blk_get(0, group_desc[block_group_id].gd_b_bitmap);
   uint32_t local_block_id = (blkaddr - 1) % blocks_per_group;
-  used = ((long)block_bitmap->b_data >> local_block_id) & 1;
+
+  /* 32 is four bytes. This came straight from stack overflow. */
+  used = *((int *)(block_bitmap->b_data) + (local_block_id / 32)) &
+         (1 << local_block_id % 32);
   blk_put(block_bitmap);
+
   return used;
 }
 
@@ -225,8 +229,12 @@ int ext2_inode_used(uint32_t ino) {
   uint32_t block_group_id = (ino - 1) / inodes_per_group;
   blk_t *inodes_bitmap = blk_get(0, group_desc[block_group_id].gd_i_bitmap);
   uint32_t local_inode_id = (ino - 1) % inodes_per_group;
-  used = ((long)inodes_bitmap->b_data >> local_inode_id) & 1;
+
+  /* 32 is four bytes. This came straight from stack overflow. */
+  used = *((int *)(inodes_bitmap->b_data) + (local_inode_id / 32)) &
+         (1 << local_inode_id % 32);
   blk_put(inodes_bitmap);
+
   return used;
 }
 
