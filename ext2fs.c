@@ -352,43 +352,43 @@ int ext2_read(uint32_t ino, void *data, size_t pos, size_t len) {
 
   /* Special cases. */
   blk_t *blk = blk_get(ino, block_id);
-  uint32_t first_entire_block_pos_end = pos + first_block_offset_from_end;
-  if (blk == BLK_ZERO) {
-    memset(data, 0, len);
-    return EXIT_SUCCESS;
-  }
-
   uint32_t entire_blocks_to_read = len / BLKSIZE;
   if (first_block_offset_from_end + last_block_req_size == BLKSIZE) {
     entire_blocks_to_read--;
   }
 
-  if (pos + len <= first_entire_block_pos_end) {
-    memcpy(data, blk->b_data + first_block_offset_from_start, len);
-    blk_put(blk);
-    return EXIT_SUCCESS;
-  }
-
   if (first_block_offset_from_end) {
     /* Read the first block. */
-    memcpy(data, blk->b_data + first_block_offset_from_start,
-           first_block_offset_from_end);
-    blk_put(blk);
+    if (blk == BLK_ZERO) {
+      memset(data, 0, len);
+    } else {
+      memcpy(data, blk->b_data + first_block_offset_from_start,
+             first_block_offset_from_end);
+      blk_put(blk);
+    }
   }
   /* Read blocks from 2 to blocks_to_read. */
   for (uint32_t i = 0; i < entire_blocks_to_read; i++) {
     blk = blk_get(ino, block_id + i);
-    memcpy(data + i * BLKSIZE + first_block_offset_from_end, blk->b_data,
-           BLKSIZE);
-    blk_put(blk);
+    void *dest = data + i * BLKSIZE + first_block_offset_from_end;
+    if (blk == BLK_ZERO) {
+      memset(dest, 0, len);
+    } else {
+      memcpy(dest, blk->b_data, BLKSIZE);
+      blk_put(blk);
+    }
   }
   if (last_block_req_size) {
     /* Read the last block. */
     blk = blk_get(ino, block_id + entire_blocks_to_read);
-    void *last_data_block_ptr =
+    void *dest =
       data + entire_blocks_to_read * BLKSIZE + first_block_offset_from_end;
-    memcpy(last_data_block_ptr, blk->b_data, last_block_req_size);
-    blk_put(blk);
+    if (blk == BLK_ZERO) {
+      memset(dest, 0, len);
+    } else {
+      memcpy(dest, blk->b_data, last_block_req_size);
+      blk_put(blk);
+    }
   }
 
   return EXIT_SUCCESS;
