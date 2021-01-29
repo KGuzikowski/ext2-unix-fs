@@ -362,7 +362,7 @@ int ext2_read(uint32_t ino, void *data, size_t pos, size_t len) {
   if (first_block_offset_from_end + last_block_req_size == BLKSIZE) {
     entire_blocks_to_read--;
   }
-  
+
   if (pos + len <= first_entire_block_pos_end) {
     memcpy(data, blk->b_data + first_block_offset_from_start, len);
     blk_put(blk);
