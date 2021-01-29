@@ -363,11 +363,11 @@ int ext2_read(uint32_t ino, void *data, size_t pos, size_t len) {
     return EXIT_SUCCESS;
   }
 
-  if (end <= first_whole_block_pos) {
-    memcpy(data, blk->b_data + fb_offset_before_start, len);
-    blk_put(blk);
-    return EXIT_SUCCESS;
-  }
+  // if (end <= first_whole_block_pos) {
+  //   memcpy(data, blk->b_data + fb_offset_before_start, len);
+  //   blk_put(blk);
+  //   return EXIT_SUCCESS;
+  // }
 
   // read first block
   memcpy(data, blk->b_data + fb_offset_before_start, fb_offset_after_start);
